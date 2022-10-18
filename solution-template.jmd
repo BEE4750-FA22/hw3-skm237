@@ -55,14 +55,11 @@ gencap = Model(HiGHS.Optimizer)
 # add different energy gen types
 generators = ["geothermal", "coal", "ccgt", "ct", "wind", "solar"];
 
-# number of hours for demand and wind/solar CF
-hours = 1:24;
-
 # variables
 G = 1:length(generators);
 T = 1:length(hours);
 @variable(gencap, x[G] >= 0);
-@variable(gencap, y[G, T] >= 0);
+@variable(gencap, y[G,T] >= 0);
 @variable(gencap, nse[T] >= 0);
 
 ```
@@ -85,7 +82,7 @@ non-served energy is the sum of the non-served energy production times the non-s
 ```julia
 
 # create objective function
-@objective(gencap, Min, investment_cost'*x + (22*sum(y[2,:]) + 35*sum(y[3,:]) + 45*sum(y[4,:])*365) + 1000*sum(nse))
+@objective(gencap, Min, investment_cost'*x + ((22*sum(y[2,:]) + 35*sum(y[3,:]) + 45*sum(y[4,:]))*365 + 365*1000*sum(nse)))
 
 ```
 
@@ -150,6 +147,7 @@ optimize!(gencap)
 ```julia
 
 using Plots
+
 
 
 
