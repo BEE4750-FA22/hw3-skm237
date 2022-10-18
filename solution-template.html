@@ -146,6 +146,28 @@ pre.hljl > span.hljl-gt { }
 x_g, y_{g,t}, nse_t
 
 \]</p>
+<h2>Problem 1.2</h2>
+<p>The objective function minimizes cost. The total cost includes the investment cost, the operating cost, and the non-served energy cost. The investment cost is the sum of the individual generator installation cost times its capacity. The total operating cost is the sum of the time in the period times the individual operating cost times the generation during that time period. The total non-served energy is the sum of the non-served energy cost times the non-served energy production  during that time period.</p>
+<p class="math">\[
+
+\min(COST) = \sum C_g^{INV}x_g + \sum\sum L_t C_g^{OP} y_{g,t} + \sum_t C_t^{NSE} nse_t
+
+\]</p>
+<h2>Problem 1.3</h2>
+<p>Generators cannot produce more than their installed capacity and availability, so the energy production over a time period must be less than or equal to the installed capacity times the capacity factor:</p>
+<p class="math">\[
+
+y_{g,t} \leq x_g * CF_{g,t}
+
+\]</p>
+<p>Need to serve load during each time period, so the sum of the production and non-served energy production should be less than or equal to the demand:</p>
+<p class="math">\[
+
+\sum (y_{g,t} + nse_{t}) \leq demand_t
+
+\]</p>
+<p>Installation capacity and energy production must be non-negative, which was established when the variables were created.</p>
+<h2>Problem 1.4</h2>
 
 <pre class='hljl'>
 <span class='hljl-nB'>julia&gt; </span><span class='hljl-k'>using</span><span class='hljl-t'> </span><span class='hljl-n'>JuMP</span><span class='hljl-t'>
@@ -173,48 +195,13 @@ Solver name: HiGHS
 
 </span><span class='hljl-nB'>julia&gt; </span><span class='hljl-nd'>@variable</span><span class='hljl-p'>(</span><span class='hljl-n'>gencap</span><span class='hljl-p'>,</span><span class='hljl-t'> </span><span class='hljl-n'>y</span><span class='hljl-p'>[</span><span class='hljl-n'>G</span><span class='hljl-p'>,</span><span class='hljl-n'>T</span><span class='hljl-p'>]</span><span class='hljl-t'> </span><span class='hljl-oB'>&gt;=</span><span class='hljl-t'> </span><span class='hljl-ni'>0</span><span class='hljl-p'>);</span><span class='hljl-t'>
 
-</span><span class='hljl-nB'>julia&gt; </span><span class='hljl-nd'>@variable</span><span class='hljl-p'>(</span><span class='hljl-n'>gencap</span><span class='hljl-p'>,</span><span class='hljl-t'> </span><span class='hljl-n'>nse</span><span class='hljl-p'>[</span><span class='hljl-n'>T</span><span class='hljl-p'>]</span><span class='hljl-t'> </span><span class='hljl-oB'>&gt;=</span><span class='hljl-t'> </span><span class='hljl-ni'>0</span><span class='hljl-p'>)</span><span class='hljl-t'>;</span>
-</pre>
+</span><span class='hljl-nB'>julia&gt; </span><span class='hljl-nd'>@variable</span><span class='hljl-p'>(</span><span class='hljl-n'>gencap</span><span class='hljl-p'>,</span><span class='hljl-t'> </span><span class='hljl-n'>nse</span><span class='hljl-p'>[</span><span class='hljl-n'>T</span><span class='hljl-p'>]</span><span class='hljl-t'> </span><span class='hljl-oB'>&gt;=</span><span class='hljl-t'> </span><span class='hljl-ni'>0</span><span class='hljl-p'>);</span><span class='hljl-t'>
 
-<h2>Problem 1.2</h2>
-<p>The objective function minimizes cost. The total cost includes the investment cost, the operating cost, and the non-served energy cost. The investment cost is the sum of the individual generator installation cost times its capacity. The operation cost is the sum of the generation times the total time in the period times the operating cost. The non-served energy is the sum of the non-served energy production times the non-served energy cost.</p>
-<p class="math">\[
+</span><span class='hljl-nB'>julia&gt; </span><span class='hljl-cs'># create objective function</span><span class='hljl-t'>
+       </span><span class='hljl-nd'>@objective</span><span class='hljl-p'>(</span><span class='hljl-n'>gencap</span><span class='hljl-p'>,</span><span class='hljl-t'> </span><span class='hljl-n'>Min</span><span class='hljl-p'>,</span><span class='hljl-t'> </span><span class='hljl-n'>investment_cost</span><span class='hljl-oB'>&#39;*</span><span class='hljl-n'>x</span><span class='hljl-t'> </span><span class='hljl-oB'>+</span><span class='hljl-t'> </span><span class='hljl-p'>((</span><span class='hljl-ni'>22</span><span class='hljl-oB'>*</span><span class='hljl-nf'>sum</span><span class='hljl-p'>(</span><span class='hljl-n'>y</span><span class='hljl-p'>[</span><span class='hljl-ni'>2</span><span class='hljl-p'>,</span><span class='hljl-oB'>:</span><span class='hljl-p'>])</span><span class='hljl-t'> </span><span class='hljl-oB'>+</span><span class='hljl-t'> </span><span class='hljl-ni'>35</span><span class='hljl-oB'>*</span><span class='hljl-nf'>sum</span><span class='hljl-p'>(</span><span class='hljl-n'>y</span><span class='hljl-p'>[</span><span class='hljl-ni'>3</span><span class='hljl-p'>,</span><span class='hljl-oB'>:</span><span class='hljl-p'>])</span><span class='hljl-t'> </span><span class='hljl-oB'>+</span><span class='hljl-t'> </span><span class='hljl-ni'>45</span><span class='hljl-oB'>*</span><span class='hljl-nf'>sum</span><span class='hljl-p'>(</span><span class='hljl-n'>y</span><span class='hljl-p'>[</span><span class='hljl-ni'>4</span><span class='hljl-p'>,</span><span class='hljl-oB'>:</span><span class='hljl-p'>]))</span><span class='hljl-oB'>*</span><span class='hljl-ni'>365</span><span class='hljl-t'> </span><span class='hljl-oB'>+</span><span class='hljl-t'> </span><span class='hljl-ni'>365</span><span class='hljl-oB'>*</span><span class='hljl-ni'>1000</span><span class='hljl-oB'>*</span><span class='hljl-nf'>sum</span><span class='hljl-p'>(</span><span class='hljl-n'>nse</span><span class='hljl-p'>)));</span><span class='hljl-t'>
 
-\min(COST) = \sum C_g^{INV}x_g + \sum\sum L_t C_g^{OP} y_{g,t} + \sum_t C_t^{NSE} nse_t
-
-\]</p>
-
-<pre class='hljl'>
-<span class='hljl-nB'>julia&gt; </span><span class='hljl-cs'># create objective function</span><span class='hljl-t'>
-       </span><span class='hljl-nd'>@objective</span><span class='hljl-p'>(</span><span class='hljl-n'>gencap</span><span class='hljl-p'>,</span><span class='hljl-t'> </span><span class='hljl-n'>Min</span><span class='hljl-p'>,</span><span class='hljl-t'> </span><span class='hljl-n'>investment_cost</span><span class='hljl-oB'>&#39;*</span><span class='hljl-n'>x</span><span class='hljl-t'> </span><span class='hljl-oB'>+</span><span class='hljl-t'> </span><span class='hljl-p'>((</span><span class='hljl-ni'>22</span><span class='hljl-oB'>*</span><span class='hljl-nf'>sum</span><span class='hljl-p'>(</span><span class='hljl-n'>y</span><span class='hljl-p'>[</span><span class='hljl-ni'>2</span><span class='hljl-p'>,</span><span class='hljl-oB'>:</span><span class='hljl-p'>])</span><span class='hljl-t'> </span><span class='hljl-oB'>+</span><span class='hljl-t'> </span><span class='hljl-ni'>35</span><span class='hljl-oB'>*</span><span class='hljl-nf'>sum</span><span class='hljl-p'>(</span><span class='hljl-n'>y</span><span class='hljl-p'>[</span><span class='hljl-ni'>3</span><span class='hljl-p'>,</span><span class='hljl-oB'>:</span><span class='hljl-p'>])</span><span class='hljl-t'> </span><span class='hljl-oB'>+</span><span class='hljl-t'> </span><span class='hljl-ni'>45</span><span class='hljl-oB'>*</span><span class='hljl-nf'>sum</span><span class='hljl-p'>(</span><span class='hljl-n'>y</span><span class='hljl-p'>[</span><span class='hljl-ni'>4</span><span class='hljl-p'>,</span><span class='hljl-oB'>:</span><span class='hljl-p'>]))</span><span class='hljl-oB'>*</span><span class='hljl-ni'>365</span><span class='hljl-t'> </span><span class='hljl-oB'>+</span><span class='hljl-t'> </span><span class='hljl-ni'>365</span><span class='hljl-oB'>*</span><span class='hljl-ni'>1000</span><span class='hljl-oB'>*</span><span class='hljl-nf'>sum</span><span class='hljl-p'>(</span><span class='hljl-n'>nse</span><span class='hljl-p'>)))</span><span class='hljl-t'>
-457000 x[1] + 268000 x[2] + 85000 x[3] + 62580 x[4] + 92000 x[5] + 92000 x[6] + 8030 y[2,1] + 8030 y[2,2] + 8030 y[2,3] + 8030 y[2,4] + 8030 y[2,5] + 8030 y[2,6] + 8030 y[2,7] + 8030 y[2,8] + 8030 y[2,9] + 8030 y[2,10] + 8030 y[2,11] + 8030 y[2,12] + 8030 y[2,13] + 8030 y[2,14] + 8030 y[2,15] + 8030 y[2,16] + 8030 y[2,17] + 8030 y[2,18] + 8030 y[2,19] + 8030 y[2,20] + 8030 y[2,21] + 8030 y[2,22] + 8030 y[2,23] + 8030 y[2,24] + 12775 y[3,1] + 12775 y[3,2] + 12775 y[3,3] + 12775 y[3,4] + 12775 y[3,5] + 12775 y[3,6] + 12775 y[3,7] + 12775 y[3,8] + 12775 y[3,9] + 12775 y[3,10] + 12775 y[3,11] + 12775 y[3,12] + 12775 y[3,13] + 12775 y[3,14] + 12775 y[3,15] + 12775 y[3,16] + 12775 y[3,17] + 12775 y[3,18] + 12775 y[3,19] + 12775 y[3,20] + 12775 y[3,21] + 12775 y[3,22] + 12775 y[3,23] + 12775 y[3,24] + 16425 y[4,1] + 16425 y[4,2] + 16425 y[4,3] + 16425 y[4,4] + 16425 y[4,5] + 16425 y[4,6] + 16425 y[4,7] + 16425 y[4,8] + 16425 y[4,9] + 16425 y[4,10] + 16425 y[4,11] + 16425 y[4,12] + 16425 y[4,13] + 16425 y[4,14] + 16425 y[4,15] + 16425 y[4,16] + 16425 y[4,17] + 16425 y[4,18] + 16425 y[4,19] + 16425 y[4,20] + 16425 y[4,21] + 16425 y[4,22] + 16425 y[4,23] + 16425 y[4,24] + 365000 nse[1] + 365000 nse[2] + 365000 nse[3] + 365000 nse[4] + 365000 nse[5] + 365000 nse[6] + 365000 nse[7] + 365000 nse[8] + 365000 nse[9] + 365000 nse[10] + 365000 nse[11] + 365000 nse[12] + 365000 nse[13] + 365000 nse[14] + 365000 nse[15] + 365000 nse[16] + 365000 nse[17] + 365000 nse[18] + 365000 nse[19] + 365000 nse[20] + 365000 nse[21] + 365000 nse[22] + 365000 nse[23] + 365000 nse[24]</span>
-</pre>
-
-<h2>Problem 1.3</h2>
-<p>Generators cannot produce more than their installed capacity and availability, so the energy production over a time period must be less than or equal to the installed capacity times the capacity factor:</p>
-<p class="math">\[
-
-y_{g,t} \leq x_g * CF_{g,t}
-
-\]</p>
-<p>Need to serve load during each time period, so the sum of the production and non-served energy production should be less than or equal to the demand:</p>
-<p class="math">\[
-
-\sum (y_{g,t} + nse_{t}) \leq demand_t
-
-\]</p>
-<p>Installation capacity and energy production must be non-negative, which was established when the variables were created.</p>
-
-<pre class='hljl'>
-<span class='hljl-nB'>julia&gt; </span><span class='hljl-cs'># generators cannot produce more than their installed capacity and availability</span><span class='hljl-t'>
-       </span><span class='hljl-n'>avail</span><span class='hljl-t'> </span><span class='hljl-oB'>=</span><span class='hljl-t'> </span><span class='hljl-nf'>zeros</span><span class='hljl-p'>(</span><span class='hljl-nf'>length</span><span class='hljl-p'>(</span><span class='hljl-n'>G</span><span class='hljl-p'>),</span><span class='hljl-t'> </span><span class='hljl-nf'>length</span><span class='hljl-p'>(</span><span class='hljl-n'>T</span><span class='hljl-p'>))</span><span class='hljl-t'>
-6×24 Matrix{Float64}:
- 0.0  0.0  0.0  0.0  0.0  0.0  0.0  0.0  …  0.0  0.0  0.0  0.0  0.0  0.0  0.0
- 0.0  0.0  0.0  0.0  0.0  0.0  0.0  0.0     0.0  0.0  0.0  0.0  0.0  0.0  0.0
- 0.0  0.0  0.0  0.0  0.0  0.0  0.0  0.0     0.0  0.0  0.0  0.0  0.0  0.0  0.0
- 0.0  0.0  0.0  0.0  0.0  0.0  0.0  0.0     0.0  0.0  0.0  0.0  0.0  0.0  0.0
- 0.0  0.0  0.0  0.0  0.0  0.0  0.0  0.0     0.0  0.0  0.0  0.0  0.0  0.0  0.0
- 0.0  0.0  0.0  0.0  0.0  0.0  0.0  0.0  …  0.0  0.0  0.0  0.0  0.0  0.0  0.0
+</span><span class='hljl-nB'>julia&gt; </span><span class='hljl-cs'># generators cannot produce more than their installed capacity and availability</span><span class='hljl-t'>
+       </span><span class='hljl-n'>avail</span><span class='hljl-t'> </span><span class='hljl-oB'>=</span><span class='hljl-t'> </span><span class='hljl-nf'>zeros</span><span class='hljl-p'>(</span><span class='hljl-nf'>length</span><span class='hljl-p'>(</span><span class='hljl-n'>G</span><span class='hljl-p'>),</span><span class='hljl-t'> </span><span class='hljl-nf'>length</span><span class='hljl-p'>(</span><span class='hljl-n'>T</span><span class='hljl-p'>));</span><span class='hljl-t'>
 
 </span><span class='hljl-nB'>julia&gt; </span><span class='hljl-n'>avail</span><span class='hljl-p'>[</span><span class='hljl-ni'>1</span><span class='hljl-p'>,</span><span class='hljl-oB'>:</span><span class='hljl-p'>]</span><span class='hljl-t'> </span><span class='hljl-oB'>=</span><span class='hljl-t'> </span><span class='hljl-n'>thermal_cf</span><span class='hljl-p'>[</span><span class='hljl-ni'>1</span><span class='hljl-p'>]</span><span class='hljl-oB'>*</span><span class='hljl-nf'>ones</span><span class='hljl-p'>(</span><span class='hljl-nf'>length</span><span class='hljl-p'>(</span><span class='hljl-n'>T</span><span class='hljl-p'>));</span><span class='hljl-t'>
 
@@ -228,55 +215,13 @@ y_{g,t} \leq x_g * CF_{g,t}
 
 </span><span class='hljl-nB'>julia&gt; </span><span class='hljl-n'>avail</span><span class='hljl-p'>[</span><span class='hljl-ni'>6</span><span class='hljl-p'>,</span><span class='hljl-oB'>:</span><span class='hljl-p'>]</span><span class='hljl-t'> </span><span class='hljl-oB'>=</span><span class='hljl-t'> </span><span class='hljl-n'>solar_cf</span><span class='hljl-p'>;</span><span class='hljl-t'>
 
-</span><span class='hljl-nB'>julia&gt; </span><span class='hljl-n'>avail</span><span class='hljl-t'>
-6×24 Matrix{Float64}:
- 0.95  0.95  0.95  0.95  0.95  0.95  …  0.95  0.95  0.95  0.95  0.95  0.95
- 1.0   1.0   1.0   1.0   1.0   1.0      1.0   1.0   1.0   1.0   1.0   1.0
- 1.0   1.0   1.0   1.0   1.0   1.0      1.0   1.0   1.0   1.0   1.0   1.0
- 1.0   1.0   1.0   1.0   1.0   1.0      1.0   1.0   1.0   1.0   1.0   1.0
- 0.58  0.57  0.55  0.28  0.14  0.21     0.3   0.45  0.44  0.57  0.55  0.58
- 0.0   0.0   0.0   0.0   0.0   0.0   …  0.0   0.0   0.0   0.0   0.0   0.0
-
-</span><span class='hljl-nB'>julia&gt; </span><span class='hljl-nd'>@constraint</span><span class='hljl-p'>(</span><span class='hljl-n'>gencap</span><span class='hljl-p'>,</span><span class='hljl-t'> </span><span class='hljl-n'>availability</span><span class='hljl-p'>[</span><span class='hljl-n'>g</span><span class='hljl-t'> </span><span class='hljl-kp'>in</span><span class='hljl-t'> </span><span class='hljl-n'>G</span><span class='hljl-p'>,</span><span class='hljl-t'> </span><span class='hljl-n'>t</span><span class='hljl-t'> </span><span class='hljl-kp'>in</span><span class='hljl-t'> </span><span class='hljl-n'>T</span><span class='hljl-p'>],</span><span class='hljl-t'> </span><span class='hljl-n'>y</span><span class='hljl-p'>[</span><span class='hljl-n'>g</span><span class='hljl-p'>,</span><span class='hljl-t'> </span><span class='hljl-n'>t</span><span class='hljl-p'>]</span><span class='hljl-t'> </span><span class='hljl-oB'>&lt;=</span><span class='hljl-t'> </span><span class='hljl-n'>avail</span><span class='hljl-p'>[</span><span class='hljl-n'>g</span><span class='hljl-p'>,</span><span class='hljl-t'> </span><span class='hljl-n'>t</span><span class='hljl-p'>]</span><span class='hljl-t'> </span><span class='hljl-oB'>*</span><span class='hljl-t'> </span><span class='hljl-n'>x</span><span class='hljl-p'>[</span><span class='hljl-n'>g</span><span class='hljl-p'>])</span><span class='hljl-t'>
-2-dimensional DenseAxisArray{ConstraintRef{Model, MathOptInterface.ConstraintIndex{MathOptInterface.ScalarAffineFunction{Float64}, MathOptInterface.LessThan{Float64}}, ScalarShape},2,...} with index sets:
-    Dimension 1, 1:6
-    Dimension 2, 1:24
-And data, a 6×24 Matrix{ConstraintRef{Model, MathOptInterface.ConstraintIndex{MathOptInterface.ScalarAffineFunction{Float64}, MathOptInterface.LessThan{Float64}}, ScalarShape}}:
- availability[1,1] : -0.95 x[1] + y[1,1] ≤ 0.0  …  availability[1,24] : -0.95 x[1] + y[1,24] ≤ 0.0
- availability[2,1] : -x[2] + y[2,1] ≤ 0.0          availability[2,24] : -x[2] + y[2,24] ≤ 0.0
- availability[3,1] : -x[3] + y[3,1] ≤ 0.0          availability[3,24] : -x[3] + y[3,24] ≤ 0.0
- availability[4,1] : -x[4] + y[4,1] ≤ 0.0          availability[4,24] : -x[4] + y[4,24] ≤ 0.0
- availability[5,1] : -0.58 x[5] + y[5,1] ≤ 0.0     availability[5,24] : -0.58 x[5] + y[5,24] ≤ 0.0
- availability[6,1] : y[6,1] ≤ 0.0               …  availability[6,24] : y[6,24] ≤ 0.0
+</span><span class='hljl-nB'>julia&gt; </span><span class='hljl-nd'>@constraint</span><span class='hljl-p'>(</span><span class='hljl-n'>gencap</span><span class='hljl-p'>,</span><span class='hljl-t'> </span><span class='hljl-n'>availability</span><span class='hljl-p'>[</span><span class='hljl-n'>g</span><span class='hljl-t'> </span><span class='hljl-kp'>in</span><span class='hljl-t'> </span><span class='hljl-n'>G</span><span class='hljl-p'>,</span><span class='hljl-t'> </span><span class='hljl-n'>t</span><span class='hljl-t'> </span><span class='hljl-kp'>in</span><span class='hljl-t'> </span><span class='hljl-n'>T</span><span class='hljl-p'>],</span><span class='hljl-t'> </span><span class='hljl-n'>y</span><span class='hljl-p'>[</span><span class='hljl-n'>g</span><span class='hljl-p'>,</span><span class='hljl-t'> </span><span class='hljl-n'>t</span><span class='hljl-p'>]</span><span class='hljl-t'> </span><span class='hljl-oB'>&lt;=</span><span class='hljl-t'> </span><span class='hljl-n'>avail</span><span class='hljl-p'>[</span><span class='hljl-n'>g</span><span class='hljl-p'>,</span><span class='hljl-t'> </span><span class='hljl-n'>t</span><span class='hljl-p'>]</span><span class='hljl-t'> </span><span class='hljl-oB'>*</span><span class='hljl-t'> </span><span class='hljl-n'>x</span><span class='hljl-p'>[</span><span class='hljl-n'>g</span><span class='hljl-p'>]);</span><span class='hljl-t'>
 
 </span><span class='hljl-nB'>julia&gt; </span><span class='hljl-cs'># need to serve load during each time period</span><span class='hljl-t'>
-       </span><span class='hljl-nd'>@constraint</span><span class='hljl-p'>(</span><span class='hljl-n'>gencap</span><span class='hljl-p'>,</span><span class='hljl-t'> </span><span class='hljl-n'>load</span><span class='hljl-p'>[</span><span class='hljl-n'>t</span><span class='hljl-t'> </span><span class='hljl-kp'>in</span><span class='hljl-t'> </span><span class='hljl-n'>T</span><span class='hljl-p'>],</span><span class='hljl-t'> </span><span class='hljl-nf'>sum</span><span class='hljl-p'>(</span><span class='hljl-n'>y</span><span class='hljl-p'>[</span><span class='hljl-oB'>:</span><span class='hljl-p'>,</span><span class='hljl-n'>t</span><span class='hljl-p'>])</span><span class='hljl-t'> </span><span class='hljl-oB'>+</span><span class='hljl-t'> </span><span class='hljl-n'>nse</span><span class='hljl-p'>[</span><span class='hljl-n'>t</span><span class='hljl-p'>]</span><span class='hljl-t'> </span><span class='hljl-oB'>==</span><span class='hljl-t'> </span><span class='hljl-n'>demand</span><span class='hljl-p'>[</span><span class='hljl-n'>t</span><span class='hljl-p'>])</span><span class='hljl-t'>
-1-dimensional DenseAxisArray{ConstraintRef{Model, MathOptInterface.ConstraintIndex{MathOptInterface.ScalarAffineFunction{Float64}, MathOptInterface.EqualTo{Float64}}, ScalarShape},1,...} with index sets:
-    Dimension 1, 1:24
-And data, a 24-element Vector{ConstraintRef{Model, MathOptInterface.ConstraintIndex{MathOptInterface.ScalarAffineFunction{Float64}, MathOptInterface.EqualTo{Float64}}, ScalarShape}}:
- load[1] : y[1,1] + y[2,1] + y[3,1] + y[4,1] + y[5,1] + y[6,1] + nse[1] = 1517.0
- load[2] : y[1,2] + y[2,2] + y[3,2] + y[4,2] + y[5,2] + y[6,2] + nse[2] = 1486.0
- load[3] : y[1,3] + y[2,3] + y[3,3] + y[4,3] + y[5,3] + y[6,3] + nse[3] = 1544.0
- load[4] : y[1,4] + y[2,4] + y[3,4] + y[4,4] + y[5,4] + y[6,4] + nse[4] = 1733.0
- load[5] : y[1,5] + y[2,5] + y[3,5] + y[4,5] + y[5,5] + y[6,5] + nse[5] = 2058.0
- load[6] : y[1,6] + y[2,6] + y[3,6] + y[4,6] + y[5,6] + y[6,6] + nse[6] = 2470.0
- load[7] : y[1,7] + y[2,7] + y[3,7] + y[4,7] + y[5,7] + y[6,7] + nse[7] = 2628.0
- load[8] : y[1,8] + y[2,8] + y[3,8] + y[4,8] + y[5,8] + y[6,8] + nse[8] = 2696.0
- load[9] : y[1,9] + y[2,9] + y[3,9] + y[4,9] + y[5,9] + y[6,9] + nse[9] = 2653.0
- load[10] : y[1,10] + y[2,10] + y[3,10] + y[4,10] + y[5,10] + y[6,10] + nse[10] = 2591.0
- ⋮
- load[16] : y[1,16] + y[2,16] + y[3,16] + y[4,16] + y[5,16] + y[6,16] + nse[16] = 2821.0
- load[17] : y[1,17] + y[2,17] + y[3,17] + y[4,17] + y[5,17] + y[6,17] + nse[17] = 3017.0
- load[18] : y[1,18] + y[2,18] + y[3,18] + y[4,18] + y[5,18] + y[6,18] + nse[18] = 3074.0
- load[19] : y[1,19] + y[2,19] + y[3,19] + y[4,19] + y[5,19] + y[6,19] + nse[19] = 2957.0
- load[20] : y[1,20] + y[2,20] + y[3,20] + y[4,20] + y[5,20] + y[6,20] + nse[20] = 2487.0
- load[21] : y[1,21] + y[2,21] + y[3,21] + y[4,21] + y[5,21] + y[6,21] + nse[21] = 2249.0
- load[22] : y[1,22] + y[2,22] + y[3,22] + y[4,22] + y[5,22] + y[6,22] + nse[22] = 1933.0
- load[23] : y[1,23] + y[2,23] + y[3,23] + y[4,23] + y[5,23] + y[6,23] + nse[23] = 1684.0
- load[24] : y[1,24] + y[2,24] + y[3,24] + y[4,24] + y[5,24] + y[6,24] + nse[24] = 1563.0</span>
+       </span><span class='hljl-nd'>@constraint</span><span class='hljl-p'>(</span><span class='hljl-n'>gencap</span><span class='hljl-p'>,</span><span class='hljl-t'> </span><span class='hljl-n'>load</span><span class='hljl-p'>[</span><span class='hljl-n'>t</span><span class='hljl-t'> </span><span class='hljl-kp'>in</span><span class='hljl-t'> </span><span class='hljl-n'>T</span><span class='hljl-p'>],</span><span class='hljl-t'> </span><span class='hljl-nf'>sum</span><span class='hljl-p'>(</span><span class='hljl-n'>y</span><span class='hljl-p'>[</span><span class='hljl-oB'>:</span><span class='hljl-p'>,</span><span class='hljl-n'>t</span><span class='hljl-p'>])</span><span class='hljl-t'> </span><span class='hljl-oB'>+</span><span class='hljl-t'> </span><span class='hljl-n'>nse</span><span class='hljl-p'>[</span><span class='hljl-n'>t</span><span class='hljl-p'>]</span><span class='hljl-t'> </span><span class='hljl-oB'>==</span><span class='hljl-t'> </span><span class='hljl-n'>demand</span><span class='hljl-p'>[</span><span class='hljl-n'>t</span><span class='hljl-p'>])</span><span class='hljl-t'>;</span>
 </pre>
 
-<h2>Problem 1.4</h2>
+<h2>Problem 1.5</h2>
 
 <pre class='hljl'>
 <span class='hljl-nB'>julia&gt; </span><span class='hljl-nf'>optimize!</span><span class='hljl-p'>(</span><span class='hljl-n'>gencap</span><span class='hljl-p'>)</span><span class='hljl-t'>
@@ -293,16 +238,87 @@ Solving the original LP from the solution after postsolve
 Model   status      : Optimal
 Simplex   iterations: 120
 Objective value     :  9.1214221224e+08
-HiGHS run time      :          0.00</span>
+HiGHS run time      :          0.00
+
+</span><span class='hljl-nB'>julia&gt; </span><span class='hljl-nf'>objective_value</span><span class='hljl-p'>(</span><span class='hljl-n'>gencap</span><span class='hljl-p'>)</span><span class='hljl-t'>
+9.12142212241888e8
+
+</span><span class='hljl-nB'>julia&gt; </span><span class='hljl-n'>value</span><span class='hljl-oB'>.</span><span class='hljl-p'>(</span><span class='hljl-n'>x</span><span class='hljl-p'>)</span><span class='hljl-t'>
+1-dimensional DenseAxisArray{Float64,1,...} with index sets:
+    Dimension 1, 1:6
+And data, a 6-element Vector{Float64}:
+    0.0
+    0.0
+ 1704.2566371681414
+  881.3274336283189
+ 1238.053097345133
+ 2728.9085545722714
+
+</span><span class='hljl-nB'>julia&gt; </span><span class='hljl-n'>value</span><span class='hljl-oB'>.</span><span class='hljl-p'>(</span><span class='hljl-n'>y</span><span class='hljl-p'>)</span><span class='hljl-t'>
+2-dimensional DenseAxisArray{Float64,2,...} with index sets:
+    Dimension 1, 1:6
+    Dimension 2, 1:24
+And data, a 6×24 Matrix{Float64}:
+  -0.0     -0.0    -0.0      -0.0      -0.0    …    -0.0     -0.0     -0.0
+  -0.0     -0.0    -0.0      -0.0      -0.0         -0.0     -0.0     -0.0
+ 798.929  780.31  863.071  1386.35   1704.26      1227.31  1003.07   844.929
+   0.0      0.0     0.0       0.0     180.416        0.0      0.0      0.0
+ 718.071  705.69  680.929   346.655   173.327      705.69   680.929  718.071
+  -0.0     -0.0    -0.0      -0.0      -0.0    …    -0.0     -0.0     -0.0
+
+</span><span class='hljl-nB'>julia&gt; </span><span class='hljl-n'>value</span><span class='hljl-oB'>.</span><span class='hljl-p'>(</span><span class='hljl-n'>nse</span><span class='hljl-p'>)</span><span class='hljl-t'>
+1-dimensional DenseAxisArray{Float64,1,...} with index sets:
+    Dimension 1, 1:24
+And data, a 24-element Vector{Float64}:
+ 0.0
+ 0.0
+ 0.0
+ 0.0
+ 0.0
+ 0.0
+ 0.0
+ 0.0
+ 0.0
+ 0.0
+ ⋮
+ 0.0
+ 0.0
+ 0.0
+ 0.0
+ 0.0
+ 0.0
+ 0.0
+ 0.0
+ 0.0</span>
 </pre>
 
-<h2>Problem 1.5</h2>
+<p>The cost of the optimized model is &#36; 912,142,212. The installation plan is detailed in the table below. The non-served energy is always 0.</p>
+
+<pre class='hljl'>
+<span class='hljl-nB'>julia&gt; </span><span class='hljl-k'>using</span><span class='hljl-t'> </span><span class='hljl-n'>DataFrames</span><span class='hljl-t'>
+
+</span><span class='hljl-nB'>julia&gt; </span><span class='hljl-n'>results</span><span class='hljl-t'> </span><span class='hljl-oB'>=</span><span class='hljl-t'> </span><span class='hljl-nf'>DataFrame</span><span class='hljl-p'>(</span><span class='hljl-t'>
+                   </span><span class='hljl-s'>&quot;Generation Type&quot;</span><span class='hljl-t'>        </span><span class='hljl-oB'>=&gt;</span><span class='hljl-t'> </span><span class='hljl-n'>generators</span><span class='hljl-p'>,</span><span class='hljl-t'>
+                   </span><span class='hljl-s'>&quot;Installed MW&quot;</span><span class='hljl-t'>  </span><span class='hljl-oB'>=&gt;</span><span class='hljl-t'> </span><span class='hljl-n'>value</span><span class='hljl-oB'>.</span><span class='hljl-p'>(</span><span class='hljl-n'>x</span><span class='hljl-p'>)</span><span class='hljl-oB'>.</span><span class='hljl-n'>data</span><span class='hljl-p'>,</span><span class='hljl-t'>
+                   </span><span class='hljl-p'>)</span><span class='hljl-t'>
+6×2 DataFrame
+ Row │ Generation Type  Installed MW
+     │ String           Float64
+─────┼───────────────────────────────
+   1 │ geothermal              0.0
+   2 │ coal                    0.0
+   3 │ ccgt                 1704.26
+   4 │ ct                    881.327
+   5 │ wind                 1238.05
+   6 │ solar                2728.91</span>
+</pre>
+
+<h2>Problem 1.6</h2>
 
 <pre class='hljl'>
 <span class='hljl-nB'>julia&gt; </span><span class='hljl-k'>using</span><span class='hljl-t'> </span><span class='hljl-n'>Plots</span><span class='hljl-t'>s</span>
 </pre>
 
-<h2>Problem 1.6</h2>
 <h1>Problem 2</h1>
 <h2>Problem 2.1</h2>
 <h2>Problem 2.2</h2>
@@ -310,6 +326,8 @@ HiGHS run time      :          0.00</span>
 <h2>Problem 2.4</h2>
 <h2>Problem 2.5</h2>
 <h1>References</h1>
+<p>Extracting JuMP results. Julia Discourse. https://discourse.julialang.org/t/extracting-jump-results/51429 </p>
+<p>First Steps with DataFrames.jl. DataFrames.jl Documentation. https://dataframes.juliadata.org/stable/man/basics/#First-Steps-with-DataFrames.jl </p>
 
 
     <hr class="title">

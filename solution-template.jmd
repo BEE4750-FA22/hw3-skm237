@@ -44,45 +44,19 @@ x_g, y_{g,t}, nse_t
 
 ```
 
-```julia
-
-using JuMP
-using HiGHS
-
-# create model
-gencap = Model(HiGHS.Optimizer)
-
-# add different energy gen types
-generators = ["geothermal", "coal", "ccgt", "ct", "wind", "solar"];
-
-# variables
-G = 1:length(generators);
-T = 1:length(hours);
-@variable(gencap, x[G] >= 0);
-@variable(gencap, y[G,T] >= 0);
-@variable(gencap, nse[T] >= 0);
-
-```
-
 
 
 ## Problem 1.2
 
 The objective function minimizes cost. The total cost includes the investment cost, the operating cost, and the
 non-served energy cost. The investment cost is the sum of the individual generator installation cost times its capacity.
-The operation cost is the sum of the generation times the total time in the period times the operating cost. The
-non-served energy is the sum of the non-served energy production times the non-served energy cost.
+The total operating cost is the sum of the time in the period times the individual operating cost times the generation during
+that time period. The total non-served energy is the sum of the non-served energy cost times the non-served energy production 
+during that time period.
 
 ```math
 
 \min(COST) = \sum C_g^{INV}x_g + \sum\sum L_t C_g^{OP} y_{g,t} + \sum_t C_t^{NSE} nse_t
-
-```
-
-```julia
-
-# create objective function
-@objective(gencap, Min, investment_cost'*x + ((22*sum(y[2,:]) + 35*sum(y[3,:]) + 45*sum(y[4,:]))*365 + 365*1000*sum(nse)))
 
 ```
 
@@ -110,33 +84,45 @@ or equal to the demand:
 
 Installation capacity and energy production must be non-negative, which was established when the variables were created.
 
-```julia
-
-# generators cannot produce more than their installed capacity and availability
-avail = zeros(length(G), length(T))
-avail[1,:] = thermal_cf[1]*ones(length(T));
-avail[2,:] = thermal_cf[2]*ones(length(T));
-avail[3,:] = thermal_cf[3]*ones(length(T));
-avail[4,:] = thermal_cf[4]*ones(length(T));
-avail[5,:] = wind_cf;
-avail[6,:] = solar_cf;
-avail
-@constraint(gencap, availability[g in G, t in T], y[g, t] <= avail[g, t] * x[g])
-
-# need to serve load during each time period
-@constraint(gencap, load[t in T], sum(y[:,t]) + nse[t] == demand[t])
-
-# non-negativity established when the variables were created
-
-```
-
 
 
 ## Problem 1.4
 
 ```julia
 
-optimize!(gencap)
+using JuMP
+using HiGHS
+
+# create model
+gencap = Model(HiGHS.Optimizer)
+
+# add different energy gen types
+generators = ["geothermal", "coal", "ccgt", "ct", "wind", "solar"];
+
+# variables
+G = 1:length(generators);
+T = 1:length(hours);
+@variable(gencap, x[G] >= 0);
+@variable(gencap, y[G,T] >= 0);
+@variable(gencap, nse[T] >= 0);
+
+# create objective function
+@objective(gencap, Min, investment_cost'*x + ((22*sum(y[2,:]) + 35*sum(y[3,:]) + 45*sum(y[4,:]))*365 + 365*1000*sum(nse)));
+
+# generators cannot produce more than their installed capacity and availability
+avail = zeros(length(G), length(T));
+avail[1,:] = thermal_cf[1]*ones(length(T));
+avail[2,:] = thermal_cf[2]*ones(length(T));
+avail[3,:] = thermal_cf[3]*ones(length(T));
+avail[4,:] = thermal_cf[4]*ones(length(T));
+avail[5,:] = wind_cf;
+avail[6,:] = solar_cf;
+@constraint(gencap, availability[g in G, t in T], y[g, t] <= avail[g, t] * x[g]);
+
+# need to serve load during each time period
+@constraint(gencap, load[t in T], sum(y[:,t]) + nse[t] == demand[t]);
+
+# non-negativity established when the variables were created
 
 ```
 
@@ -146,16 +132,40 @@ optimize!(gencap)
 
 ```julia
 
-using Plots
+optimize!(gencap)
+objective_value(gencap)
+value.(x)
+value.(y)
+value.(nse)
 
+```
 
+The cost of the optimized model is $ 912,142,212. The installation plan is detailed in the table below.
+The non-served energy is always 0.
 
+```julia
+
+using DataFrames
+
+results = DataFrame(
+            "Generation Type"        => generators,
+            "Installed MW"  => value.(x).data,
+            )
 
 ```
 
 
 
 ## Problem 1.6
+
+```julia
+
+using Plots
+
+
+
+
+```
 
 # Problem 2
 
@@ -170,3 +180,8 @@ using Plots
 ## Problem 2.5
 
 # References
+
+
+Extracting JuMP results. Julia Discourse. https://discourse.julialang.org/t/extracting-jump-results/51429 
+
+First Steps with DataFrames.jl. DataFrames.jl Documentation. https://dataframes.juliadata.org/stable/man/basics/#First-Steps-with-DataFrames.jl 
