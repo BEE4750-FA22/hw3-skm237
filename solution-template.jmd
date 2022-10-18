@@ -127,7 +127,7 @@ avail
 @constraint(gencap, availability[g in G, t in T], y[g, t] <= avail[g, t] * x[g])
 
 # need to serve load during each time period
-@constraint(gencap, load[t in T], sum(y[:,t] + nse[t]) == demand[t])
+@constraint(gencap, load[t in T], sum(y[:,t]) + nse[t] == demand[t])
 
 # non-negativity established when the variables were created
 
