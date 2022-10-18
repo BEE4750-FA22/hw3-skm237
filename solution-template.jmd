@@ -85,7 +85,7 @@ non-served energy is the sum of the non-served energy production times the non-s
 ```julia
 
 # create objective function
-@objective(gencap, Min, [457000, 268000, 85000, 62580, 92000, 92000]'*x + (22*sum(y[2,:]) + 35*sum(y[3,:]) + 45*sum(y[4,:])*365) + 1000*sum(nse))
+@objective(gencap, Min, investment_cost'*x + (22*sum(y[2,:]) + 35*sum(y[3,:]) + 45*sum(y[4,:])*365) + 1000*sum(nse))
 
 ```
 
@@ -115,7 +115,21 @@ Installation capacity and energy production must be non-negative, which was esta
 
 ```julia
 
+# generators cannot produce more than their installed capacity and availability
+avail = zeros(length(G), length(T))
+avail[1,:] = thermal_cf[1]*ones(length(T));
+avail[2,:] = thermal_cf[2]*ones(length(T));
+avail[3,:] = thermal_cf[3]*ones(length(T));
+avail[4,:] = thermal_cf[4]*ones(length(T));
+avail[5,:] = wind_cf;
+avail[6,:] = solar_cf;
+avail
+@constraint(gencap, availability[g in G, t in T], y[g, t] <= avail[g, t] * x[g])
 
+# need to serve load during each time period
+@constraint(gencap, load[t in T], sum(y[:,t] + nse[t]) == demand[t])
+
+# non-negativity established when the variables were created
 
 ```
 
@@ -134,6 +148,10 @@ optimize!(gencap)
 ## Problem 1.5
 
 ```julia
+
+using Plots
+
+
 
 ```
 
