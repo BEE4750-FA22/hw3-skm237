@@ -107,7 +107,7 @@ T = 1:length(hours);
 @variable(gencap, nse[T] >= 0);
 
 # create objective function
-@objective(gencap, Min, investment_cost'*x + ((22*sum(y[2,:]) + 35*sum(y[3,:]) + 45*sum(y[4,:]))*365 + 365*1000*sum(nse)));
+@objective(gencap, Min, investment_cost'*x + sum(op_cost.*y)*365 + 1000*sum(nse)*365);
 
 # generators cannot produce more than their installed capacity and availability
 avail = zeros(length(G), length(T));
@@ -215,7 +215,7 @@ T = 1:length(hours);
 @variable(gencap2, nse[T] >= 0);
 
 # create objective function
-@objective(gencap2, Min, investment_cost'*x + ((22*sum(y[2,:]) + 35*sum(y[3,:]) + 45*sum(y[4,:]))*365 + 365*1000*sum(nse)));
+@objective(gencap2, Min, investment_cost'*x + sum(op_cost.*y)*365 + 1000*sum(nse)*365);
 
 # generators cannot produce more than their installed capacity and availability
 avail = zeros(length(G), length(T));
@@ -310,7 +310,7 @@ T = 1:length(hours);
 @variable(gencap3, nse[T] >= 0);
 
 # create objective function
-@objective(gencap3, Min, investment_cost'*x + ((22*sum(y[2,:]) + 35*sum(y[3,:]) + 45*sum(y[4,:]))*365 + 365*1000*sum(nse)));
+@objective(gencap3, Min, investment_cost'*x + sum(op_cost.*y)*365 + 1000*sum(nse))*365;
 
 # generators cannot produce more than their installed capacity and availability
 avail = zeros(length(G), length(T));
