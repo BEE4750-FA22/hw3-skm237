@@ -132,6 +132,7 @@ avail[6,:] = solar_cf;
 
 ```julia
 
+# optimize model
 optimize!(gencap)
 objective_value(gencap)
 value.(x)
@@ -162,26 +163,187 @@ results = DataFrame(
 
 using Plots
 
+# create array for plotting loads over a 24 hr period
+loads = value.(y).data;
 
+# plot line plot
+plot(loads', label=permutedims(["geothermal","coal","ccgt","ct","wind","solar"]), title="Energy Gen over 24 hr", xlabel="Hr", ylabel="MW")
 
+# plot stacked area plot
+areaplot(loads', label=permutedims(["geothermal","coal","ccgt","ct","wind","solar"]), title="Energy Gen over 24 hr", xlabel="Hr", ylabel="MW")
 
 ```
+
+Solar energy is the main draw during the sunny hours of the day, with CT and CCGT kicking in during the transitional hours. 
+Wind and CCGT are the main contributors in the nighttime.
+
+
+
+
+
 
 # Problem 2
 
 ## Problem 2.1
 
+The only change that needs to be added is the inclusion of another constraint. This must include the emission limit 
+of 1.5 MtCO2/yr. Therefore the emissions times the sum of generation times 365 days cannot exceed the emission limit.
+
+```math
+
+\sum (y_{g,t}) * e_g * 365 \leq 1.5 \text{ MtCO2}
+
+```
+
+
+
 ## Problem 2.2
+
+```julia
+
+# create new model
+gencap2 = Model(HiGHS.Optimizer)
+
+# add different energy gen types
+generators = ["geothermal", "coal", "ccgt", "ct", "wind", "solar"];
+
+# variables
+G = 1:length(generators);
+T = 1:length(hours);
+@variable(gencap2, x[G] >= 0);
+@variable(gencap2, y[G,T] >= 0);
+@variable(gencap2, nse[T] >= 0);
+
+# create objective function
+@objective(gencap2, Min, investment_cost'*x + ((22*sum(y[2,:]) + 35*sum(y[3,:]) + 45*sum(y[4,:]))*365 + 365*1000*sum(nse)));
+
+# generators cannot produce more than their installed capacity and availability
+avail = zeros(length(G), length(T));
+avail[1,:] = thermal_cf[1]*ones(length(T));
+avail[2,:] = thermal_cf[2]*ones(length(T));
+avail[3,:] = thermal_cf[3]*ones(length(T));
+avail[4,:] = thermal_cf[4]*ones(length(T));
+avail[5,:] = wind_cf;
+avail[6,:] = solar_cf;
+@constraint(gencap2, availability[g in G, t in T], y[g, t] <= avail[g, t] * x[g]);
+
+# need to serve load during each time period
+@constraint(gencap2, load[t in T], sum(y[:,t]) + nse[t] == demand[t]);
+
+# new emissions constraint
+@constraint(gencap2, emissions[g in G], (sum(y[g,:])*co2_emissions[g]*365) <= 1.5*10^6);
+
+# non-negativity established when the variables were created
+
+```
+
+
 
 ## Problem 2.3
 
+```julia
+
+# optimize model
+optimize!(gencap2)
+objective_value(gencap2)
+value.(x)
+value.(y)
+value.(nse)
+
+```
+
+The cost of the optimized model is $ 933,988,453. The installation plan is detailed in the table below.
+The non-served energy is always 0.
+
+```julia
+
+using DataFrames
+
+results = DataFrame(
+            "Generation Type"        => generators,
+            "Installed MW"  => value.(x).data,
+            )
+
+```
+
+There is a decrease in the use of CCGT and an increase in the use of CT. There was an increase in both 
+solar and wind.
+
+
+
 ## Problem 2.4
+
+```julia
+
+# create array for plotting loads over a 24 hr period
+loads = value.(y).data;
+
+# plot line plot
+plot(loads', label=permutedims(["geothermal","coal","ccgt","ct","wind","solar"]), title="Energy Gen over 24 hr", xlabel="Hr", ylabel="MW")
+
+# plot stacked area plot
+areaplot(loads', label=permutedims(["geothermal","coal","ccgt","ct","wind","solar"]), title="Energy Gen over 24 hr", xlabel="Hr", ylabel="MW")
+
+```
+
+Similar to before, solar energy is the main draw during the sunny hours of the day. During 
+the transitional hours, CCGT use decreases, CT increases, and wind increases. 
+Wind and CCGT are still the main contributors in the nighttime.
+
+
 
 ## Problem 2.5
 
-# References
+```julia
 
+# create new model
+gencap3 = Model(HiGHS.Optimizer)
+
+# add different energy gen types
+generators = ["geothermal", "coal", "ccgt", "ct", "wind", "solar"];
+
+# variables
+G = 1:length(generators);
+T = 1:length(hours);
+@variable(gencap3, x[G] >= 0);
+@variable(gencap3, y[G,T] >= 0);
+@variable(gencap3, nse[T] >= 0);
+
+# create objective function
+@objective(gencap3, Min, investment_cost'*x + ((22*sum(y[2,:]) + 35*sum(y[3,:]) + 45*sum(y[4,:]))*365 + 365*1000*sum(nse)));
+
+# generators cannot produce more than their installed capacity and availability
+avail = zeros(length(G), length(T));
+avail[1,:] = thermal_cf[1]*ones(length(T));
+avail[2,:] = thermal_cf[2]*ones(length(T));
+avail[3,:] = thermal_cf[3]*ones(length(T));
+avail[4,:] = thermal_cf[4]*ones(length(T));
+avail[5,:] = wind_cf;
+avail[6,:] = solar_cf;
+@constraint(gencap3, availability[g in G, t in T], y[g, t] <= avail[g, t] * x[g]);
+
+# need to serve load during each time period
+@constraint(gencap3, load[t in T], sum(y[:,t]) + nse[t] == demand[t]);
+
+# new emissions constraint
+@constraint(gencap3, emissions[g in G], (sum(y[g,:])*co2_emissions[g]*365) <= 1.501*10^6);
+
+# non-negativity established when the variables were created
+
+# optimize model
+optimize!(gencap3)
+objective_value(gencap3)
+
+```
+
+This new emissions limit would save $ 55,149.
+
+
+
+# References
 
 Extracting JuMP results. Julia Discourse. https://discourse.julialang.org/t/extracting-jump-results/51429 
 
 First Steps with DataFrames.jl. DataFrames.jl Documentation. https://dataframes.juliadata.org/stable/man/basics/#First-Steps-with-DataFrames.jl 
+
+Multiple labels must be in a row vector. Plots.jl Issues. https://github.com/JuliaPlots/Plots.jl/issues/901 
